@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Academic Records &amp; Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<!-- Keep style.css and script.js in the same folder as this file -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===================== AUTH ===================== -->
+  <div id="auth-container" class="auth-wrap">
+    <div class="seal">SMS</div>
+    <div class="auth-card">
+      <h1 class="brand-title">Academic Records &amp; Management</h1>
+      <p class="brand-sub">Registrar &middot; Faculty &middot; Student Ledger</p>
+
+      <div class="tabs">
+        <button type="button" class="tab-btn active" data-tab="login" onclick="switchTab('login')">Sign in</button>
+        <button type="button" class="tab-btn" data-tab="register" onclick="switchTab('register')">Register as Student</button>
+      </div>
+
+      <!-- Login -->
+      <form id="login-form" class="form-content">
+        <div class="form-group">
+          <label for="login-role">Role</label>
+          <select id="login-role" required>
+            <option value="admin">Administrator</option>
+            <option value="registrar">Registrar</option>
+            <option value="college">College Dean</option>
+            <option value="depthead">Department Head</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="login-email">Email / Username</label>
+          <input type="text" id="login-email" placeholder="admin or you@school.edu" required>
+        </div>
+        <div class="form-group">
+          <label for="login-pass">Password</label>
+          <input type="password" id="login-pass" placeholder="Default: admin123" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+        <p class="hint">Defaults &mdash; Admin: admin / admin123 &middot; Others: see roster, password "pass"</p>
+      </form>
+
+      <!-- Student self-registration -->
+      <form id="register-form" class="form-content hidden">
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-pass">Password</label>
+          <input type="password" id="reg-pass" required>
+        </div>
+        <div class="form-group">
+          <label for="reg-college">College</label>
+          <select id="reg-college" required onchange="refreshDeptOptions('reg-college','reg-department')"></select>
+        </div>
+        <div class="form-group">
+          <label for="reg-department">Department</label>
+          <select id="reg-department" required></select>
+        </div>
+        <div class="form-group">
+          <label for="reg-course">Course / Program</label>
+          <input type="text" id="reg-course" placeholder="e.g. B.Sc. Computer Science" required>
+        </div>
+        <button type="submit" class="btn btn-success btn-block">Register</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <div id="dashboard-container" class="hidden">
+    <header class="navbar">
+      <div class="brand-mark">SMS</div>
+      <h1 id="user-welcome">Welcome</h1>
+      <div class="nav-right">
+        <span id="role-badge" class="badge">Role</span>
+        <button type="button" onclick="logout()" class="btn btn-danger btn-sm">Logout</button>
+      </div>
+    </header>
+
+    <main class="dashboard-content">
+
+      <!-- ADMIN -->
+      <section id="admin-view" class="role-view hidden">
+        <div class="view-head">
+          <h2>Administration &mdash; All Accounts</h2>
+          <p class="subtle">Create staff and faculty accounts, reset passwords, remove accounts.</p>
+        </div>
+
+        <form id="admin-add-form" class="card inline-form">
+          <div class="form-group">
+            <label for="admin-add-name">Name</label>
+            <input type="text" id="admin-add-name" required>
+          </div>
+          <div class="form-group">
+            <label for="admin-add-email">Email</label>
+            <input type="email" id="admin-add-email" required>
+          </div>
+          <div class="form-group">
+            <label for="admin-add-pass">Password</label>
+            <input type="text" id="admin-add-pass" required>
+          </div>
+          <div class="form-group">
+            <label for="admin-add-role">Role</label>
+            <select id="admin-add-role" required onchange="onAdminRoleChange()">
+              <option value="registrar">Registrar</option>
+              <option value="college">College Dean</option>
+              <option value="depthead">Department Head</option>
+              <option value="teacher">Teacher</option>
+            </select>
+          </div>
+          <div class="form-group" id="admin-add-college-wrap">
+            <label for="admin-add-college">College</label>
+            <select id="admin-add-college" onchange="refreshDeptOptions('admin-add-college','admin-add-department')"></select>
+          </div>
+          <div class="form-group" id="admin-add-department-wrap">
+            <label for="admin-add-department">Department</label>
+            <select id="admin-add-department"></select>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Account</button>
+        </form>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>Email</th><th>Password</th><th>Role</th>
+              <th>College</th><th>Department</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-user-table"></tbody>
+        </table>
+      </section>
+
+      <!-- REGISTRAR -->
+      <section id="registrar-view" class="role-view hidden">
+        <div class="view-head">
+          <h2>Registrar &mdash; Student Enrollment</h2>
+          <p class="subtle">Enroll students, assign college/department, and maintain enrollment records.</p>
+        </div>
+
+        <form id="registrar-add-form" class="card inline-form">
+          <div class="form-group">
+            <label for="reg2-name">Name</label>
+            <input type="text" id="reg2-name" required>
+          </div>
+          <div class="form-group">
+            <label for="reg2-email">Email</label>
+            <input type="email" id="reg2-email" required>
+          </div>
+          <div class="form-group">
+            <label for="reg2-college">College</label>
+            <select id="reg2-college" required onchange="refreshDeptOptions('reg2-college','reg2-department')"></select>
+          </div>
+          <div class="form-group">
+            <label for="reg2-department">Department</label>
+            <select id="reg2-department" required></select>
+          </div>
+          <div class="form-group">
+            <label for="reg2-course">Course / Program</label>
+            <input type="text" id="reg2-course" required>
+          </div>
+          <button type="submit" class="btn btn-success">Enroll Student</button>
+        </form>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Name</th><th>Email</th><th>College</th><th>Department</th><th>Course</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="registrar-student-table"></tbody>
+        </table>
+      </section>
+
+      <!-- COLLEGE DEAN -->
+      <section id="college-view" class="role-view hidden">
+        <div class="view-head">
+          <h2>College Overview</h2>
+          <p class="subtle">Read-only performance summary for every department in your college.</p>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Department</th><th>Head</th><th>Teachers</th><th>Students</th>
+              <th>Avg. Total Score</th><th>Avg. Attendance</th>
+            </tr>
+          </thead>
+          <tbody id="college-report-table"></tbody>
+        </table>
+      </section>
+
+      <!-- DEPARTMENT HEAD -->
+      <section id="depthead-view" class="role-view hidden">
+        <div class="view-head">
+          <h2>Department Roster</h2>
+          <p class="subtle">Review faculty gradebook entries and approve final scores for your department.</p>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student</th><th>Course</th><th>Mid /30</th><th>Assess. /20</th><th>Final /50</th>
+              <th>Total /100</th><th>Grade</th><th>Attendance</th><th>Status</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="depthead-table"></tbody>
+        </table>
+      </section>
+
+      <!-- TEACHER -->
+      <section id="teacher-view" class="role-view hidden">
+        <div class="view-head">
+          <h2>Gradebook</h2>
+          <p class="subtle">Enter mid exam, assessment and final exam marks. Total and grade are calculated automatically.</p>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Student</th><th>Course</th><th>Mid Exam /30</th><th>Assessment /20</th><th>Final Exam /50</th>
+              <th>Total /100</th><th>Grade</th><th>Attendance</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="teacher-student-table"></tbody>
+        </table>
+      </section>
+
+      <!-- STUDENT -->
+      <section id="student-view" class="role-view hidden">
+        <h2>Student Portal</h2>
+        <div class="profile-card card">
+          <div class="profile-row"><strong>Name</strong><span id="st-profile-name"></span></div>
+          <div class="profile-row"><strong>Email</strong><span id="st-profile-email"></span></div>
+          <div class="profile-row"><strong>College</strong><span id="st-profile-college"></span></div>
+          <div class="profile-row"><strong>Department</strong><span id="st-profile-department"></span></div>
+          <div class="profile-row"><strong>Course</strong><span id="st-profile-course"></span></div>
+          <div class="profile-row"><strong>Attendance</strong><span id="st-profile-attendance"></span></div>
+          <div class="profile-row"><strong>Status</strong><span id="st-profile-status"></span></div>
+
+          <div class="ledger">
+            <div class="ledger-title">Score Ledger</div>
+            <div class="ledger-row"><span>Mid Exam</span><span id="st-mid">&mdash;</span><span class="ledger-max">/ 30</span></div>
+            <div class="ledger-row"><span>Assessment</span><span id="st-assessment">&mdash;</span><span class="ledger-max">/ 20</span></div>
+            <div class="ledger-row"><span>Final Exam</span><span id="st-final">&mdash;</span><span class="ledger-max">/ 50</span></div>
+            <div class="ledger-row ledger-total"><span>Total</span><span id="st-total">&mdash;</span><span class="ledger-max">/ 100</span></div>
+            <div class="ledger-row ledger-grade"><span>Grade</span><span id="st-grade">&mdash;</span><span></span></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
